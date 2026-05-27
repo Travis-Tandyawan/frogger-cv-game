@@ -21,10 +21,11 @@ Proyek ini dibangun menggunakan Python dan mengimplementasikan *Natural User Int
    ```bash
    git clone [https://github.com/Travis-Tandyawan/frogger-cv-game.git](https://github.com/Travis-Tandyawan/frogger-cv-game.git)
 2. Buat Virtual Environment (opsional tapi direkomendasikan) dan instal dependensi:
-   Bash
-pip install opencv-python mediapipe==0.10.14 pygame
-3. Bash
-python main.py
+   ```Bash
+   pip install opencv-python mediapipe==0.10.14 pygame
+3. Jalankan Game
+   ```Bash
+   python main.py
 
 🎮 Kontrol (Gerakan Tangan)
 1. Angkat tangan ke depan kamera hingga lingkaran merah (patokan) muncul.
