@@ -27,9 +27,9 @@ pip install opencv-python mediapipe==0.10.14 pygame
 python main.py
 
 🎮 Kontrol (Gerakan Tangan)
-Angkat tangan ke depan kamera hingga lingkaran merah (patokan) muncul.
-Geser tangan Ke Atas melewati patokan -> Melompat Maju.
-Geser tangan Ke Bawah melewati patokan -> Mundur.
-Geser tangan Ke Kiri / Kanan melewati patokan -> Geser Kiri / Kanan.
-Kembali ke tengah untuk melakukan lompatan berikutnya.
+1. Angkat tangan ke depan kamera hingga lingkaran merah (patokan) muncul.
+2. Geser tangan Ke Atas melewati patokan -> Melompat Maju.
+3. Geser tangan Ke Bawah melewati patokan -> Mundur.
+4. Geser tangan Ke Kiri / Kanan melewati patokan -> Geser Kiri / Kanan.
+5. Kembali ke tengah untuk melakukan lompatan berikutnya.
 
