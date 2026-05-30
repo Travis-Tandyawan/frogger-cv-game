@@ -18,7 +18,7 @@ Proyek ini dibangun menggunakan Python dan mengimplementasikan *Natural User Int
 
 ## 📥 Cara Instalasi dan Bermain (Untuk Developer)
 1. *Clone* repositori ini:
-```bash
+   ```bash
    git clone [https://github.com/Travis-Tandyawan/frogger-cv-game.git](https://github.com/Travis-Tandyawan/frogger-cv-game.git)
 2. Buat Virtual Environment (opsional tapi direkomendasikan) dan instal dependensi:
    ```Bash
