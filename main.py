@@ -4,13 +4,8 @@ import pygame
 import sys
 import os
 
-# ============================================================
-# FUNGSI KHUSUS UNTUK BACA ASET DI DALAM FILE .EXE
-# ============================================================
 def resource_path(relative_path):
-    """ Dapatkan path absolut ke resource, berfungsi untuk dev dan untuk PyInstaller """
     try:
-        # PyInstaller membuat folder temporary dan menyimpannya di _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
@@ -20,12 +15,12 @@ def resource_path(relative_path):
 # 1. PERSIAPAN GAME (PYGAME)
 # ============================================================
 pygame.init()
+pygame.font.init()
 lebar_layar, tinggi_layar = 800, 600
 layar = pygame.display.set_mode((lebar_layar, tinggi_layar))
 pygame.display.set_caption("Frogger CV - Final Version")
 clock = pygame.time.Clock()
 
-# Koordinat Awal (Kelipatan 40)
 posisi_awal_x = 400
 posisi_awal_y = 540
 kodok_x = posisi_awal_x
@@ -33,7 +28,11 @@ kodok_y = posisi_awal_y
 ukuran_kodok = 40
 jarak_lompat = 40
 
-# --- MEMUAT ASET KATAK (SPRITE SHEET) ---
+# --- FITUR BARU: STATUS & TIMER KEMENANGAN ---
+status_menang = False
+waktu_menang = 0 # Menyimpan waktu kapan pemain menang
+
+# Aset Katak
 lokasi_sheet_kodok = resource_path(os.path.join("assets", "frogs_sheet.png"))
 sheet_kodok = pygame.image.load(lokasi_sheet_kodok).convert_alpha()
 lebar_kodok_potong = sheet_kodok.get_width() // 6
@@ -42,7 +41,7 @@ gambar_kodok = pygame.transform.scale(
     (ukuran_kodok, ukuran_kodok)
 )
 
-# --- MEMUAT ASET MOBIL (SPRITE SHEET) ---
+# Aset Mobil
 lokasi_sheet_mobil = resource_path(os.path.join("assets", "cars_sheet.png"))
 sheet_mobil = pygame.image.load(lokasi_sheet_mobil).convert_alpha()
 lebar_mobil_potong = sheet_mobil.get_width() // 2
@@ -54,7 +53,7 @@ gambar_mobil = pygame.transform.scale(
     (lebar_mobil, tinggi_mobil)
 )
 
-# --- JALUR RINTANGAN ---
+# Jalur Kendaraan & Kayu
 daftar_mobil = [
     {"x": 0, "y": 500, "speed": 4},     
     {"x": 400, "y": 460, "speed": -5},  
@@ -70,7 +69,7 @@ daftar_kayu = [
 ]
 
 # ============================================================
-# 2. PERSIAPAN KAMERA & COMPUTER VISION
+# 2. PERSIAPAN KAMERA
 # ============================================================
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.7)
@@ -82,13 +81,10 @@ is_neutral = True
 waktu_hilang = 0
 batas_hilang = 15
 
-print("Game siap! Silakan angkat tangan Anda ke kamera.")
-
 # ============================================================
-# 3. LOOPING UTAMA GAME
+# 3. LOOPING UTAMA
 # ============================================================
 while True:
-    # --- A. MEMBACA KAMERA & DETEKSI TANGAN ---
     success, frame = cap.read()
     if not success: break
         
@@ -101,23 +97,20 @@ while True:
         waktu_hilang = 0 
         for hand_landmarks in results.multi_hand_landmarks:
             mp_draw.draw_landmarks(frame, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-            pergelangan = hand_landmarks.landmark[0]
+            pergelangan = hand_landmarks.landmark[8]
             h, w, _ = frame.shape
             cx, cy = int(pergelangan.x * w), int(pergelangan.y * h)
             
-            # Set kalibrasi titik awal
             if anchor_x is None or anchor_y is None:
                 anchor_x, anchor_y = cx, cy
                 
-            # Gambar titik jangkar (merah) dan posisi saat ini (hijau)
             cv2.circle(frame, (anchor_x, anchor_y), 10, (0, 0, 255), cv2.FILLED)
             cv2.circle(frame, (cx, cy), 8, (0, 255, 0), cv2.FILLED)
             
             jarak_x = cx - anchor_x
             jarak_y = cy - anchor_y
             
-            # Logika translasi gerakan
-            if is_neutral:
+            if is_neutral and not status_menang:
                 if jarak_y < -40:
                     command = "MAJU"
                     kodok_y -= jarak_lompat
@@ -138,13 +131,11 @@ while True:
                 if abs(jarak_x) < 20 and abs(jarak_y) < 20:
                     is_neutral = True
     else:
-        # Buffer jika tangan hilang sejenak
         waktu_hilang += 1
         if waktu_hilang > batas_hilang:
             anchor_x, anchor_y = None, None
             is_neutral = True
 
-    # --- B. TOMBOL KELUAR WINDOW GAME ---
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             cap.release()
@@ -152,7 +143,6 @@ while True:
             pygame.quit()
             sys.exit()
 
-    # --- C. UPDATE POSISI OBJEK ---
     kodok_x = max(0, min(lebar_layar - ukuran_kodok, kodok_x))
     kodok_y = max(0, min(tinggi_layar - ukuran_kodok, kodok_y))
 
@@ -166,62 +156,74 @@ while True:
         if kayu["speed"] > 0 and kayu["x"] > lebar_layar: kayu["x"] = -kayu["w"]
         elif kayu["speed"] < 0 and kayu["x"] < -kayu["w"]: kayu["x"] = lebar_layar
 
-    # --- D. DETEKSI TABRAKAN (COLLISION) ---
-    kotak_kodok = pygame.Rect(kodok_x, kodok_y, ukuran_kodok, ukuran_kodok)
+    if not status_menang:
+        kotak_kodok = pygame.Rect(kodok_x, kodok_y, ukuran_kodok, ukuran_kodok)
 
-    # 1. Ketabrak Mobil
-    for mobil in daftar_mobil:
-        kotak_mobil = pygame.Rect(mobil["x"], mobil["y"], lebar_mobil, tinggi_mobil)
-        if kotak_kodok.colliderect(kotak_mobil):
-            kodok_x, kodok_y = posisi_awal_x, posisi_awal_y
+        # 1. Mobil
+        for mobil in daftar_mobil:
+            kotak_mobil = pygame.Rect(mobil["x"], mobil["y"], lebar_mobil, tinggi_mobil)
+            if kotak_kodok.colliderect(kotak_mobil):
+                kodok_x, kodok_y = posisi_awal_x, posisi_awal_y
 
-    # 2. Jatuh ke Sungai
-    if 180 <= kodok_y <= 300:
-        nempel_kayu = False
-        for kayu in daftar_kayu:
-            kotak_kayu = pygame.Rect(kayu["x"], kayu["y"], kayu["w"], 40)
-            if kotak_kodok.colliderect(kotak_kayu):
-                nempel_kayu = True
-                kodok_x += kayu["speed"] 
-                break
-        if not nempel_kayu:
-            kodok_x, kodok_y = posisi_awal_x, posisi_awal_y
-            
-    # 3. Masuk Garis Finish
-    if kodok_y <= 140:
-        print("SELAMAT! ANDA MENANG!")
-        kodok_x, kodok_y = posisi_awal_x, posisi_awal_y
+        # 2. Sungai
+        if 180 <= kodok_y <= 300:
+            nempel_kayu = False
+            for kayu in daftar_kayu:
+                kotak_kayu = pygame.Rect(kayu["x"], kayu["y"], kayu["w"], 40)
+                if kotak_kodok.colliderect(kotak_kayu):
+                    nempel_kayu = True
+                    kodok_x += kayu["speed"] 
+                    break
+            if not nempel_kayu:
+                kodok_x, kodok_y = posisi_awal_x, posisi_awal_y
+                
+        # 3. Masuk Garis Finish (REVISI TIMER)
+        if kodok_y <= 140:
+            status_menang = True
+            waktu_menang = pygame.time.get_ticks() # Mulai stopwatch saat menang!
 
-    # --- E. MENGGAMBAR (RENDER) LAYAR GAME ---
+    # ==========================================
+    # MENGGAMBAR KE LAYAR
+    # ==========================================
     layar.fill((50, 50, 50)) 
-    pygame.draw.rect(layar, (200, 200, 0), (0, 0, lebar_layar, 140))       # Finish
-    pygame.draw.rect(layar, (0, 100, 255), (0, 180, lebar_layar, 160))     # Sungai
-    pygame.draw.rect(layar, (100, 100, 100), (0, 340, lebar_layar, 40))    # Trotoar Tengah
-    pygame.draw.rect(layar, (100, 100, 100), (0, 540, lebar_layar, 60))    # Trotoar Bawah
+    pygame.draw.rect(layar, (200, 200, 0), (0, 0, lebar_layar, 140))       
+    pygame.draw.rect(layar, (0, 100, 255), (0, 180, lebar_layar, 160))     
+    pygame.draw.rect(layar, (100, 100, 100), (0, 340, lebar_layar, 40))    
+    pygame.draw.rect(layar, (100, 100, 100), (0, 540, lebar_layar, 60))    
     
     for kayu in daftar_kayu:
         pygame.draw.rect(layar, (139, 69, 19), (kayu["x"], kayu["y"], kayu["w"], 40))
 
     for mobil in daftar_mobil:
-        if mobil["speed"] < 0:
+        if mobil["speed"] > 0:
             mobil_flip = pygame.transform.flip(gambar_mobil, True, False)
             layar.blit(mobil_flip, (mobil["x"], mobil["y"]))
         else:
             layar.blit(gambar_mobil, (mobil["x"], mobil["y"]))
             
     layar.blit(gambar_kodok, (kodok_x, kodok_y))
+
+    # --- FITUR BARU: TEKS MENANG & SISTEM RESET (3 DETIK) ---
+    if status_menang:
+        font_besar = pygame.font.SysFont("Arial", 80, bold=True)
+        teks_menang = font_besar.render("KAMU MENANG!", True, (50, 255, 50))
+        layar.blit(teks_menang, (lebar_layar//2 - 280, tinggi_layar//2 - 50))
+        
+        # Cek apakah sudah 3000 milidetik (3 detik) berlalu
+        waktu_sekarang = pygame.time.get_ticks()
+        if waktu_sekarang - waktu_menang > 3000:
+            status_menang = False # Matikan status menang
+            kodok_x, kodok_y = posisi_awal_x, posisi_awal_y # Reset ke garis start
     
     pygame.display.update()
     clock.tick(30)
 
-    # --- F. MENAMPILKAN WINDOW KAMERA ---
     cv2.putText(frame, f"PERINTAH: {command}", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
     cv2.imshow("Kamera Deteksi CV", frame)
     
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-# Bersihkan resources saat keluar
 cap.release()
 cv2.destroyAllWindows()
 pygame.quit()
