@@ -1,14 +1,14 @@
 # 🐸 Frogger CV - Gesture Controlled Arcade Game
 
-Sebuah reka ulang (remake) dari game arcade klasik "Frogger", di mana pemain mengendalikan karakter menggunakan **pergerakan tangan secara real-time (Computer Vision)**, bukan menggunakan keyboard atau controller.
+Sebuah reka ulang (remake) dari game arcade klasik "Frogger", di mana pemain mengendalikan karakter menggunakan **pergerakan ujung jari telunjuk secara real-time (Computer Vision)**, bukan menggunakan keyboard atau controller.
 
 Proyek ini dibangun menggunakan Python dan mengimplementasikan *Natural User Interface* (NUI) dengan membaca landmark tangan manusia.
 
 ## 🚀 Fitur Utama
-* **Real-time Hand Tracking**: Mendeteksi dan melacak pergerakan pergelangan tangan menggunakan kecerdasan buatan.
+* **Index Finger Tracking**: Mendeteksi dan melacak pergerakan ujung jari telunjuk (Landmark 8) menggunakan kecerdasan buatan.
+* **Win State & Auto-Reset**: Dilengkapi layar kemenangan ("KAMU MENANG!") dan *timer* 3 detik untuk mengulang permainan secara otomatis bergaya mesin *arcade*.
 * **Dynamic Grid Movement**: Pemetaan gerakan (Maju, Mundur, Kiri, Kanan) yang sejajar dan presisi ke sistem petak (grid) game 2D.
-* **Anti-Jitter Mechanism**: Algoritma toleransi (*buffer*) untuk menjaga stabilitas kontrol saat tangan sesaat keluar dari *frame* kamera.
-* **Sprite Sheet Subsurface**: Ekstraksi grafis otomatis menggunakan pemotongan matriks (pengganti pemotongan gambar manual).
+* **Anti-Jitter Mechanism**: Menggunakan sistem "Anchor & Neutral Zone" untuk mencegah lompatan ganda yang tidak disengaja.
 
 ## 🛠️ Teknologi yang Digunakan
 * **Python 3.x**
@@ -18,7 +18,7 @@ Proyek ini dibangun menggunakan Python dan mengimplementasikan *Natural User Int
 
 ## 📥 Cara Instalasi dan Bermain (Untuk Developer)
 1. *Clone* repositori ini:
-   ```bash
+```bash
    git clone [https://github.com/Travis-Tandyawan/frogger-cv-game.git](https://github.com/Travis-Tandyawan/frogger-cv-game.git)
 2. Buat Virtual Environment (opsional tapi direkomendasikan) dan instal dependensi:
    ```Bash
@@ -28,9 +28,10 @@ Proyek ini dibangun menggunakan Python dan mengimplementasikan *Natural User Int
    python main.py
 
 🎮 Kontrol (Gerakan Tangan)
-1. Angkat tangan ke depan kamera hingga lingkaran merah (patokan) muncul.
-2. Geser tangan Ke Atas melewati patokan -> Melompat Maju.
-3. Geser tangan Ke Bawah melewati patokan -> Mundur.
-4. Geser tangan Ke Kiri / Kanan melewati patokan -> Geser Kiri / Kanan.
-5. Kembali ke tengah untuk melakukan lompatan berikutnya.
+Game ini menggunakan sistem Sentakan (Flick) berbasis titik tengah (Netral).
+1. Angkat jari telunjuk Anda ke depan kamera hingga lingkaran merah (titik tengah/netral) muncul.
+2. MAJU: Sentakkan jari ke atas melewati lingkaran merah, lalu segera kembalikan jari ke lingkaran merah.
+3. MUNDUR: Sentakkan jari ke bawah, lalu kembalikan ke tengah.
+4. KIRI/KANAN: Sentakkan jari ke kiri/kanan, lalu kembalikan ke tengah.
+5. Seberangi jalan raya dan sungai hingga mencapai garis kuning di paling atas untuk memenangkan permainan!
 
